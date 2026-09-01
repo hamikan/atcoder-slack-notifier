@@ -9,6 +9,12 @@ on:
     - cron: "0 3 * * *"
 
   workflow_dispatch:
+    inputs:
+      force_next_contest:
+        description: "次のコンテストを強制的に選ぶ"
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -33,12 +39,14 @@ jobs:
       - name: Send Slack notification
         if: github.event_name == 'schedule'
         env:
-          SLACK_WORKFLOW_WEBHOOK_URL: ${{ secrets.SLACK_PROD_WORKFLOW_WEBHOOK_URL }}
+          SLACK_WORKFLOW_WEBHOOK_URL: ${{ secrets.SLACK_WORKFLOW_WEBHOOK_URL }}
+          SLACK_CHANNEL_ID: ${{ vars.SLACK_PROD_CHANNEL_ID }}
         run: python scripts/check_contests.py
 
       - name: Send test Slack notification
         if: github.event_name == 'workflow_dispatch'
         env:
-          SLACK_WORKFLOW_WEBHOOK_URL: ${{ secrets.SLACK_TEST_WORKFLOW_WEBHOOK_URL }}
-          TEST_MODE: "true"
+          SLACK_WORKFLOW_WEBHOOK_URL: ${{ secrets.SLACK_WORKFLOW_WEBHOOK_URL }}
+          SLACK_CHANNEL_ID: ${{ vars.SLACK_TEST_CHANNEL_ID }}
+          FORCE_NEXT_CONTEST: ${{ inputs.force_next_contest }}
         run: python scripts/check_contests.py

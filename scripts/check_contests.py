@@ -96,13 +96,13 @@ def get_all_contests() -> list[Contest]:
 def get_next_contest(
     contests: list[Contest],
     now: datetime,
-    test_mode: bool,
+    force_next_contest: bool,
 ) -> Contest | None:
-    if test_mode:
+    if force_next_contest:
         candidates = [
             contest
             for contest in contests
-            if contest.start >= now
+            if now < contest.start
         ]
     elif now.hour < 12:
         candidates = [
@@ -202,6 +202,7 @@ def send_slack_notification(contest: Contest) -> None:
     duration = int((contest.end - contest.start).total_seconds() // 60)
 
     payload = {
+        "channel_id": os.environ["SLACK_CHANNEL_ID"],
         "contest_type": contest.contest_type,
         "contest_id": get_contest_id(contest.url),
         "contest_name": contest.name,
@@ -227,10 +228,10 @@ def send_slack_notification(contest: Contest) -> None:
 
 def main() -> None:
     now = datetime.now(JST)
-    test_mode = os.environ.get("TEST_MODE") == "true"
+    force_next_contest = os.environ.get("FORCE_NEXT_CONTEST") == "true"
 
     contests = get_all_contests()
-    contest = get_next_contest(contests, now, test_mode)
+    contest = get_next_contest(contests, now, force_next_contest)
 
     if contest is None:
         print("No contest to notify.")
