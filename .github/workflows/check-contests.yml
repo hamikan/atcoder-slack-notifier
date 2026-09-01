@@ -24,3 +24,17 @@ jobs:
 
       - name: Check contests
         run: python scripts/check_contests.py
+    
+      - name: Test Slack notification
+        env:
+          SLACK_WORKFLOW_WEBHOOK_URL: ${{ secrets.SLACK_WORKFLOW_WEBHOOK_URL }}
+        run: |
+          curl -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "contest_type": "ABC",
+              "contest_name": "AtCoder Beginner Contest 474",
+              "start_time": "9月6日（日）13:10",
+              "contest_url": "https://atcoder.jp/contests/abc474"
+            }' \
+            "$SLACK_WORKFLOW_WEBHOOK_URL"
