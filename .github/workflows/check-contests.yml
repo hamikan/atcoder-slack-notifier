@@ -1,6 +1,13 @@
 name: Check AtCoder Contests
 
 on:
+  schedule:
+    # 09:00 JST = 00:00 UTC
+    - cron: "0 0 * * *"
+
+    # 12:00 JST = 03:00 UTC
+    - cron: "0 3 * * *"
+
   workflow_dispatch:
 
 permissions:
@@ -9,6 +16,7 @@ permissions:
 jobs:
   check-contests:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Checkout
@@ -20,21 +28,17 @@ jobs:
           python-version: "3.13"
 
       - name: Install dependencies
-        run: pip install icalendar
+        run: pip install -r requirements.txt
 
-      - name: Check contests
-        run: python scripts/check_contests.py
-    
-      - name: Test Slack notification
+      - name: Send Slack notification
+        if: github.event_name == 'schedule'
         env:
-          SLACK_WORKFLOW_WEBHOOK_URL: ${{ secrets.SLACK_WORKFLOW_WEBHOOK_URL }}
-        run: |
-          curl -X POST \
-            -H 'Content-Type: application/json' \
-            -d '{
-              "contest_type": "ABC",
-              "contest_name": "AtCoder Beginner Contest 474",
-              "start_time": "9月6日（日）13:10",
-              "contest_url": "https://atcoder.jp/contests/abc474"
-            }' \
-            "$SLACK_WORKFLOW_WEBHOOK_URL"
+          SLACK_WORKFLOW_WEBHOOK_URL: ${{ secrets.SLACK_PROD_WORKFLOW_WEBHOOK_URL }}
+        run: python scripts/check_contests.py
+
+      - name: Send test Slack notification
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          SLACK_WORKFLOW_WEBHOOK_URL: ${{ secrets.SLACK_TEST_WORKFLOW_WEBHOOK_URL }}
+          TEST_MODE: "true"
+        run: python scripts/check_contests.py
