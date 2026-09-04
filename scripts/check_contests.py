@@ -20,6 +20,11 @@ CALENDARS = {
 
 EARLY_THRESHOLD_HOUR = 13
 
+NORMAL_WEEKDAYS = {
+    "ABC": 5,  # 土
+    "ARC": 6,  # 日
+}
+
 WEEKDAYS = "月火水木金土日"
 
 
@@ -176,11 +181,14 @@ def get_scores(contest_url: str) -> list[int] | None:
     return scores or None
 
 
-def get_time_notice(start: datetime) -> str:
-    if start.hour == 21 and start.minute == 0:
+def get_schedule_notice(contest_type: str, start: datetime) -> str:
+    is_normal_weekday = start.weekday() == NORMAL_WEEKDAYS[contest_type]
+    is_normal_time = start.hour == 21 and start.minute == 0
+
+    if is_normal_weekday and is_normal_time:
         return ""
 
-    return "普段と開始時刻が異なるので気をつけてください。"
+    return "普段と開催日時が異なるので気をつけてください。"
 
 
 def format_scores(scores: list[int] | None) -> str:
@@ -212,7 +220,7 @@ def send_slack_notification(contest: Contest) -> None:
         "duration": f"{duration}分",
         "contest_url": contest.url,
         "scores": format_scores(scores),
-        "time_notice": get_time_notice(contest.start),
+        "time_notice": get_schedule_notice(contest.contest_type, contest.start),
     }
 
     request = Request(

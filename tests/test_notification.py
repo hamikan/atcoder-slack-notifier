@@ -61,7 +61,7 @@ def test_send_slack_notification(
         "duration": "120分",
         "contest_url": "https://atcoder.jp/contests/arc229",
         "scores": "400 - 500 - 600",
-        "time_notice": "普段と開始時刻が異なるので気をつけてください。",
+        "time_notice": "普段と開催日時が異なるので気をつけてください。",
     }
 
 

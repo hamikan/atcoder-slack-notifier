@@ -7,7 +7,7 @@ from scripts.check_contests import (
     format_date,
     format_scores,
     get_contest_id,
-    get_time_notice,
+    get_schedule_notice,
 )
 
 
@@ -25,18 +25,33 @@ def test_get_contest_id_with_trailing_slash():
     )
 
 
-def test_time_notice_is_empty_at_21():
-    start = datetime(2026, 9, 5, 21, 0, tzinfo=JST)
+def test_schedule_notice_is_empty_for_normal_abc_schedule():
+    start = datetime(2026, 9, 12, 21, 0, tzinfo=JST)
 
-    assert get_time_notice(start) == ""
+    assert get_schedule_notice("ABC", start) == ""
 
 
-def test_time_notice_is_shown_at_different_time():
-    start = datetime(2026, 9, 5, 21, 30, tzinfo=JST)
+def test_schedule_notice_is_empty_for_normal_arc_schedule():
+    start = datetime(2026, 9, 13, 21, 0, tzinfo=JST)
+
+    assert get_schedule_notice("ARC", start) == ""
+
+
+def test_schedule_notice_is_shown_for_different_weekday():
+    start = datetime(2026, 9, 13, 21, 0, tzinfo=JST)
 
     assert (
-        get_time_notice(start)
-        == "普段と開始時刻が異なるので気をつけてください。"
+        get_schedule_notice("ABC", start)
+        == "普段と開催日時が異なるので気をつけてください。"
+    )
+
+
+def test_schedule_notice_is_shown_for_different_time():
+    start = datetime(2026, 9, 12, 21, 30, tzinfo=JST)
+
+    assert (
+        get_schedule_notice("ABC", start)
+        == "普段と開催日時が異なるので気をつけてください。"
     )
 
 
