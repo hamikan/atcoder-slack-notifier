@@ -59,6 +59,7 @@ def test_send_slack_notification(
         "start_time": "21:30",
         "end_time": "23:30",
         "duration": "120分",
+        "rated_range": "1200 〜 2799",
         "contest_url": "https://atcoder.jp/contests/arc229",
         "scores": "400 - 500 - 600",
         "time_notice": "普段と開催日時が異なるので気をつけてください。",
@@ -130,6 +131,48 @@ def test_main_sends_selected_contest(
     cc.main()
 
     assert sent == [contest]
+
+
+def test_send_slack_notification_for_arc_minus_minus(
+    monkeypatch,
+    fake_response,
+):
+    contest = Contest(
+        contest_type="ARC--",
+        name="AtCoder Regular Contest-- 229",
+        start=datetime(2026, 9, 6, 21, 0, tzinfo=JST),
+        end=datetime(2026, 9, 6, 23, 0, tzinfo=JST),
+        url="https://atcoder.jp/contests/arc229",
+    )
+
+    monkeypatch.setenv(
+        "SLACK_WORKFLOW_WEBHOOK_URL",
+        "https://example.com/webhook",
+    )
+    monkeypatch.setenv("SLACK_CHANNEL_ID", "C123456789")
+    monkeypatch.setattr(
+        cc,
+        "get_scores",
+        lambda url: [400, 500, 600],
+    )
+
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["request"] = request
+        return fake_response(b'{"ok":true}')
+
+    monkeypatch.setattr(cc, "urlopen", fake_urlopen)
+
+    send_slack_notification(contest)
+
+    payload = json.loads(
+        captured["request"].data.decode()
+    )
+
+    assert payload["contest_type"] == "ARC--"
+    assert payload["contest_id"] == "ARC--229"
+    assert payload["rated_range"] == "800 〜 2399"
 
 
 def test_main_does_not_send_when_no_contest(

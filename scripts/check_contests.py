@@ -32,6 +32,12 @@ NOTIFY_CONTEST_TYPES = {
     "ARC--",
 }
 
+RATED_RANGES = {
+    "ABC": "0 〜 1999",
+    "ARC": "1200 〜 2799",
+    "ARC--": "800 〜 2399",
+}
+
 WEEKDAYS = "月火水木金土日"
 
 
@@ -164,8 +170,16 @@ def get_next_contest(
     )
 
 
-def get_contest_id(contest_url: str) -> str:
-    return contest_url.rstrip("/").split("/")[-1].upper()
+def get_contest_number(contest_url: str) -> str:
+    contest_id = contest_url.rstrip("/").split("/")[-1].upper()
+
+    if contest_id.startswith("ABC"):
+        return contest_id.removeprefix("ABC")
+
+    if contest_id.startswith("ARC"):
+        return contest_id.removeprefix("ARC")
+
+    return contest_id
 
 
 def get_scores(contest_url: str) -> list[int] | None:
@@ -232,18 +246,20 @@ def format_date(dt: datetime) -> str:
 def send_slack_notification(contest: Contest) -> None:
     webhook_url = os.environ["SLACK_WORKFLOW_WEBHOOK_URL"]
 
-    scores = get_scores(contest.url)
+    contest_number = get_contest_number(contest.url)
     duration = int((contest.end - contest.start).total_seconds() // 60)
+    scores = get_scores(contest.url)
 
     payload = {
         "channel_id": os.environ["SLACK_CHANNEL_ID"],
         "contest_type": contest.contest_type,
-        "contest_id": get_contest_id(contest.url),
+        "contest_id": f"{contest.contest_type}{contest_number}",
         "contest_name": contest.name,
         "contest_date": format_date(contest.start),
         "start_time": contest.start.strftime("%H:%M"),
         "end_time": contest.end.strftime("%H:%M"),
         "duration": f"{duration}分",
+        "rated_range": RATED_RANGES[contest.contest_type],
         "contest_url": contest.url,
         "scores": format_scores(scores),
         "time_notice": get_schedule_notice(contest.contest_type, contest.start),

@@ -6,22 +6,22 @@ from scripts.check_contests import (
     JST,
     format_date,
     format_scores,
-    get_contest_id,
+    get_contest_number,
     get_schedule_notice,
 )
 
 
-def test_get_contest_id():
+def test_get_contest_number():
     assert (
-        get_contest_id("https://atcoder.jp/contests/abc474")
-        == "ABC474"
+        get_contest_number("https://atcoder.jp/contests/abc474")
+        == "474"
     )
 
 
-def test_get_contest_id_with_trailing_slash():
+def test_get_contest_number_with_trailing_slash():
     assert (
-        get_contest_id("https://atcoder.jp/contests/arc229/")
-        == "ARC229"
+        get_contest_number("https://atcoder.jp/contests/arc229/")
+        == "229"
     )
 
 
