@@ -21,8 +21,15 @@ CALENDARS = {
 EARLY_THRESHOLD_HOUR = 13
 
 NORMAL_WEEKDAYS = {
-    "ABC": 5,  # 土
-    "ARC": 6,  # 日
+    "ABC": 5,
+    "ARC": 6,
+    "ARC--": 6,
+}
+
+NOTIFY_CONTEST_TYPES = {
+    "ABC",
+    "ARC",
+    "ARC--",
 }
 
 WEEKDAYS = "月火水木金土日"
@@ -37,6 +44,19 @@ class Contest:
     url: str
 
 
+def get_contest_type(calendar_type: str, name: str) -> str:
+    if calendar_type != "ARC":
+        return calendar_type
+
+    if "Regular Contest++" in name:
+        return "ARC++"
+
+    if "Regular Contest--" in name:
+        return "ARC--"
+
+    return "ARC"
+
+
 def get_ics_url(calendar_id: str) -> str:
     return (
         "https://calendar.google.com/calendar/ical/"
@@ -44,7 +64,7 @@ def get_ics_url(calendar_id: str) -> str:
     )
 
 
-def get_contests(contest_type: str, calendar_id: str) -> list[Contest]:
+def get_contests(calendar_type: str, calendar_id: str) -> list[Contest]:
     with urlopen(get_ics_url(calendar_id), timeout=20) as response:
         calendar = Calendar.from_ical(response.read())
 
@@ -76,10 +96,16 @@ def get_contests(contest_type: str, calendar_id: str) -> list[Contest]:
         if not url.startswith("https://atcoder.jp/contests/"):
             continue
 
+        name = str(event.get("SUMMARY", ""))
+        contest_type = get_contest_type(calendar_type, name)
+
+        if contest_type not in NOTIFY_CONTEST_TYPES:
+            continue
+
         contests.append(
             Contest(
                 contest_type=contest_type,
-                name=str(event.get("SUMMARY", "")),
+                name=name,
                 start=start,
                 end=end,
                 url=url,
@@ -92,8 +118,8 @@ def get_contests(contest_type: str, calendar_id: str) -> list[Contest]:
 def get_all_contests() -> list[Contest]:
     contests = []
 
-    for contest_type, calendar_id in CALENDARS.items():
-        contests.extend(get_contests(contest_type, calendar_id))
+    for calendar_type, calendar_id in CALENDARS.items():
+        contests.extend(get_contests(calendar_type, calendar_id))
 
     return contests
 

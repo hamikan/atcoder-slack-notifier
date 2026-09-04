@@ -37,6 +37,12 @@ def test_schedule_notice_is_empty_for_normal_arc_schedule():
     assert get_schedule_notice("ARC", start) == ""
 
 
+def test_schedule_notice_is_empty_for_normal_arc_minus_minus_schedule():
+    start = datetime(2026, 9, 13, 21, 0, tzinfo=JST)
+
+    assert get_schedule_notice("ARC--", start) == ""
+
+
 def test_schedule_notice_is_shown_for_different_weekday():
     start = datetime(2026, 9, 13, 21, 0, tzinfo=JST)
 

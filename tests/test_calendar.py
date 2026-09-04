@@ -8,9 +8,23 @@ from scripts.check_contests import (
     JST,
     Contest,
     get_all_contests,
+    get_contest_type,
     get_contests,
     get_ics_url,
 )
+
+
+@pytest.mark.parametrize(
+    ("calendar_type", "name", "expected"),
+    [
+        ("ABC", "AtCoder Beginner Contest 474", "ABC"),
+        ("ARC", "AtCoder Regular Contest 229", "ARC"),
+        ("ARC", "AtCoder Regular Contest-- 229", "ARC--"),
+        ("ARC", "AtCoder Regular Contest++ 229", "ARC++"),
+    ],
+)
+def test_get_contest_type(calendar_type, name, expected):
+    assert get_contest_type(calendar_type, name) == expected
 
 
 def test_get_ics_url():
@@ -53,6 +67,63 @@ def test_get_contests(monkeypatch, make_ics, fake_response):
             url="https://atcoder.jp/contests/arc229",
         )
     ]
+
+
+def test_get_contests_detects_arc_minus_minus(
+    monkeypatch,
+    make_ics,
+    fake_response,
+):
+    ics = make_ics(
+        """
+        BEGIN:VEVENT
+        UID:test@example.com
+        DTSTART:20260906T120000Z
+        DTEND:20260906T140000Z
+        STATUS:CONFIRMED
+        SUMMARY:AtCoder Regular Contest-- 229
+        DESCRIPTION:https://atcoder.jp/contests/arc229
+        END:VEVENT
+        """
+    )
+
+    monkeypatch.setattr(
+        cc,
+        "urlopen",
+        lambda url, timeout: fake_response(ics),
+    )
+
+    contests = get_contests("ARC", "calendar@example.com")
+
+    assert len(contests) == 1
+    assert contests[0].contest_type == "ARC--"
+
+
+def test_get_contests_ignores_arc_plus_plus(
+    monkeypatch,
+    make_ics,
+    fake_response,
+):
+    ics = make_ics(
+        """
+        BEGIN:VEVENT
+        UID:test@example.com
+        DTSTART:20260906T120000Z
+        DTEND:20260906T143000Z
+        STATUS:CONFIRMED
+        SUMMARY:AtCoder Regular Contest++ 230
+        DESCRIPTION:https://atcoder.jp/contests/arc230
+        END:VEVENT
+        """
+    )
+
+    monkeypatch.setattr(
+        cc,
+        "urlopen",
+        lambda url, timeout: fake_response(ics),
+    )
+
+    assert get_contests("ARC", "calendar@example.com") == []
 
 
 @pytest.mark.parametrize(
